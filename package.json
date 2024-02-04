@@ -54,6 +54,9 @@
       "owner": "openriceworks",
       "repo": "electron-timer",
       "releaseType": "release"
+    },
+    "directories": {
+      "output": "dist"
     }
   }
 }
