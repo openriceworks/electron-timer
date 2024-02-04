@@ -44,6 +44,8 @@ function createWindow(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  // package.jsonのbuild設定で、起動時にドックに表示しないようにしているので不要
+  // 開発者モードの挙動を合わせるために消しておく
   if (process.platform === 'darwin') {
     app.dock.hide()
   }
