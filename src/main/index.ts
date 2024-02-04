@@ -6,6 +6,10 @@ import { nativeImage } from 'electron/common'
 import { EventEmitter } from 'stream'
 
 function createWindow(): void {
+  if (process.platform === 'darwin') {
+    app.dock.show()
+  }
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 900,
@@ -21,9 +25,6 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
-    if (process.platform === 'darwin') {
-      app.dock.show()
-    }
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
