@@ -18,8 +18,7 @@
     "build:unpack": "pnpm build && electron-builder --dir",
     "build:win": "pnpm build && electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
-    "build:linux": "electron-vite build && electron-builder --linux",
-    "release": "electron-builder --mac"
+    "build:linux": "electron-vite build && electron-builder --linux"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.0",
@@ -49,6 +48,12 @@
       "extendInfo": {
         "LSUIElement": true
       }
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "openriceworks",
+      "repo": "electron-timer",
+      "releaseType": "release"
     }
   }
 }
