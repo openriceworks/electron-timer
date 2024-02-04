@@ -1,7 +1,9 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Tray, Menu, Notification } from 'electron'
 import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { nativeImage } from 'electron/common'
+import { EventEmitter } from 'stream'
 
 function createWindow(): void {
   // Create the browser window.
@@ -19,6 +21,9 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+    if (process.platform === 'darwin') {
+      app.dock.show()
+    }
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -39,36 +44,71 @@ function createWindow(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  if (process.platform === 'darwin') {
+    app.dock.hide()
+  }
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
-  })
-
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
-
-  createWindow()
-
-  app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
+  // テンプレートを作った時の画像を16pxに加工
+  const trayIcon = nativeImage.createFromPath(icon).resize({ width: 16 })
+  // Tray作成
+  const tray = new Tray(trayIcon)
+  // Trayにメニュー追加
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'ウィンドウを開く',
+      click: () => {
+        createWindow()
+      }
+    },
+    {
+      label: '終了',
+      click: () => {
+        app.quit()
+      }
+    }
+  ])
+  tray.setContextMenu(contextMenu)
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
+  if (process.platform === 'darwin') {
+    app.dock.hide()
   }
 })
 
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.
+
+type Time = {
+  hours: number
+  minutes: number
+}
+
+let notifyTime: Time | null = null
+
+// 1分ごとにtimeイベントをemitする
+const intervalEventEmitter = new EventEmitter()
+setInterval(() => {
+  intervalEventEmitter.emit('time', new Date())
+}, 1000 * 60)
+
+intervalEventEmitter.on('time', (now: Date) => {
+  if (notifyTime == null) {
+    return
+  }
+
+  if (notifyTime.hours === now.getHours() && notifyTime.minutes === now.getMinutes()) {
+    const notification = new Notification({
+      title: '時間になりました。'
+    })
+    notification.show()
+  }
+})
+
+ipcMain.handle('setTimer', (event, time: Time) => {
+  console.debug('setTimer', time)
+  notifyTime = time
+})
